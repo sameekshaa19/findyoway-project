@@ -10,7 +10,6 @@
 ```
 findyoway/
 ├── mobile-native/    # React Native CLI — user-facing mobile app
-├── mobile-old-expo/  # Expo (legacy) — old mobile app version
 ├── backend/          # Python Flask — Gemini API server
 ├── dashboard/        # React (Vite) — venue registration web dashboard
 ├── .env.example      # Shared env variables template (copy to .env)
@@ -46,8 +45,8 @@ cp .env.example .env
 
 Edit `.env` and fill in your API keys:
 - `GOOGLE_API_KEY` - Gemini API key
-- `EXPO_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
 - `VITE_SUPABASE_URL` - Same as above for dashboard
 - `VITE_SUPABASE_ANON_KEY` - Same as above for dashboard
 
@@ -220,7 +219,7 @@ npm run android
 |---|---|
 | Mobile | React Native CLI, React 19, TypeScript |
 | Navigation | React Navigation, React Native Maps |
-| Camera | expo-camera (to be integrated) |
+| Camera | react-native-camera (to be integrated) |
 | Location | React Native Geolocation Service |
 | AI | Gemini API (text + vision) |
 | Obstacle Detection | MobileNet SSD (OpenCV) |
