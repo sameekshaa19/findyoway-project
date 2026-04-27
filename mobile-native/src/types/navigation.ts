@@ -6,7 +6,7 @@ export type RootStackParamList = {
   };
   SOS: undefined;
   Settings: undefined;
-  CameraPlaceholder: undefined;
+  Camera: undefined;
   VoiceAssistantPlaceholder: undefined;
 };
 

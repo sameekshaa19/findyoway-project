@@ -32,8 +32,8 @@ export function HomeScreen({ navigation }: Props) {
           Person 2 and Person 3 can plug their work into dedicated screens without touching the route shell.
         </Text>
         <AppButton
-          label="Open Camera Placeholder"
-          onPress={() => navigation.navigate('CameraPlaceholder')}
+          label="Open Camera"
+          onPress={() => navigation.navigate('Camera')}
           variant="secondary"
         />
         <AppButton
