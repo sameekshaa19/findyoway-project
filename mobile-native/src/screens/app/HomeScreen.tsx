@@ -37,13 +37,13 @@ export function HomeScreen({ navigation }: Props) {
           variant="secondary"
         />
         <AppButton
-          label="Open Voice Assistant Placeholder"
-          onPress={() => navigation.navigate('VoiceAssistantPlaceholder')}
+          label="Open Voice Assistant"
+          onPress={() => navigation.navigate('VoiceAssistant')}
           variant="secondary"
         />
       </View>
 
-      <VoiceCTAButton onPress={() => navigation.navigate('VoiceAssistantPlaceholder')} />
+      <VoiceCTAButton onPress={() => navigation.navigate('VoiceAssistant')} />
     </ScreenLayout>
   );
 }

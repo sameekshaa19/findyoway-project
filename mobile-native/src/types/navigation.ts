@@ -7,7 +7,7 @@ export type RootStackParamList = {
   SOS: undefined;
   Settings: undefined;
   CameraPlaceholder: undefined;
-  VoiceAssistantPlaceholder: undefined;
+  VoiceAssistant: undefined;
 };
 
 export type RouteCoordinate = {

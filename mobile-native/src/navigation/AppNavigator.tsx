@@ -7,7 +7,7 @@ import { RouteScreen } from '../screens/app/RouteScreen';
 import { SOSScreen } from '../screens/app/SOSScreen';
 import { SettingsScreen } from '../screens/app/SettingsScreen';
 import { CameraPlaceholderScreen } from '../screens/app/CameraPlaceholderScreen';
-import { VoiceAssistantPlaceholderScreen } from '../screens/app/VoiceAssistantPlaceholderScreen';
+import { VoiceAssistantScreen } from '../screens/app/VoiceAssistantScreen';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../constants/theme';
 
@@ -44,8 +44,8 @@ export function AppNavigator() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="CameraPlaceholder" component={CameraPlaceholderScreen} />
         <Stack.Screen
-          name="VoiceAssistantPlaceholder"
-          component={VoiceAssistantPlaceholderScreen}
+          name="VoiceAssistant"
+          component={VoiceAssistantScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
