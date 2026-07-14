@@ -15,24 +15,36 @@ export function HomeScreen({ navigation }: Props) {
     <ScreenLayout navigation={navigation} currentRoute="Home">
       <AppHeader
         title="FindYoWay"
-        subtitle="Person 1 foundation build: mobile shell, shared contracts, and outdoor navigation flow."
+        subtitle="AI-powered navigation for the blind and visually impaired"
       />
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Primary flow</Text>
+        <Text style={styles.cardTitle}>Outdoor Navigation</Text>
         <Text style={styles.cardText}>
-          Home to destination input to outdoor route is now owned by the mobile foundation layer.
+          Get walking directions to any destination with live GPS tracking, step-by-step voice guidance, and automatic rerouting.
         </Text>
         <AppButton label="Start Navigation" onPress={() => navigation.navigate('Destination')} />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Parallel team placeholders</Text>
+      <View style={styles.card} accessible accessibilityLabel="Indoor navigation using floor plans">
+        <Text style={styles.cardTitle}>Indoor Navigation</Text>
         <Text style={styles.cardText}>
-          Person 2 and Person 3 can plug their work into dedicated screens without touching the route shell.
+          Navigate inside venues with floor plans, A* pathfinding, and step-by-step voice guidance.
         </Text>
         <AppButton
-          label="Open Camera Placeholder"
+          label="Start Indoor Navigation"
+          onPress={() => navigation.navigate('IndoorSelectVenue')}
+          variant="secondary"
+        />
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Assistive Tools</Text>
+        <Text style={styles.cardText}>
+          Use camera-based obstacle detection and voice assistant for navigation help.
+        </Text>
+        <AppButton
+          label="Open Camera"
           onPress={() => navigation.navigate('CameraPlaceholder')}
           variant="secondary"
         />

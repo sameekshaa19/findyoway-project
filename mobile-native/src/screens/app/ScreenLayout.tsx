@@ -7,7 +7,7 @@ import type { RootStackParamList } from '../../types/navigation';
 
 type ScreenLayoutProps = PropsWithChildren<{
   navigation: NavigationProp<RootStackParamList>;
-  currentRoute: 'Home' | 'Destination' | 'SOS' | 'Settings';
+  currentRoute: keyof RootStackParamList;
   scrollable?: boolean;
 }>;
 

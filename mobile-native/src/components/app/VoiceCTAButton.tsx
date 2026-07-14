@@ -9,10 +9,15 @@ type VoiceCTAButtonProps = {
 
 export function VoiceCTAButton({
   onPress,
-  label = 'Voice assistant placeholder',
+  label = 'Open Voice Assistant',
 }: VoiceCTAButtonProps) {
   return (
-    <Pressable onPress={onPress} style={styles.button}>
+    <Pressable
+      onPress={onPress}
+      style={styles.button}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       <Text style={styles.label}>{label}</Text>
     </Pressable>
   );

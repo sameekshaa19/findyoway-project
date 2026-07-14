@@ -120,6 +120,9 @@ export function VoiceAssistantScreen({ navigation }: Props) {
             ]}
             onPress={handleMicPress}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={isListening ? 'Stop listening' : 'Start listening'}
+            accessibilityState={{ busy: voiceState === 'processing' }}
           >
             <Text style={styles.micIcon}>{isListening ? '⏹️' : '🎤'}</Text>
           </TouchableOpacity>

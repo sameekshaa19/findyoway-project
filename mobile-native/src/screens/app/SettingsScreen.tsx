@@ -11,12 +11,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 export function SettingsScreen({ navigation }: Props) {
   return (
     <ScreenLayout navigation={navigation} currentRoute="Settings">
-      <AppHeader
-        title="Settings"
-        subtitle="Shared configuration lives here so feature teams can add toggles without changing the route flow."
-      />
+      <AppHeader title="Settings" subtitle="App configuration" />
       <View style={styles.card}>
-        <Text style={styles.title}>Foundation defaults</Text>
+        <Text style={styles.title}>Configuration</Text>
         <Text style={styles.text}>Language locale: en-IN</Text>
         <Text style={styles.text}>Route provider: OSRM walking</Text>
         <Text style={styles.text}>Geocoder: OpenStreetMap Nominatim</Text>

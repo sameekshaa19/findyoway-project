@@ -1,7 +1,7 @@
 # FindYoWay 🦯
 
 > AI-powered navigation for the blind and visually impaired.  
-> Outdoor GPS • Indoor floor-plan navigation • Live sign reading via Gemini Vision • Obstacle detection • Multilingual voice bot • SOS
+> Outdoor GPS • Indoor A* floor-plan navigation • Obstacle detection • Sign reading • Voice assistant • SOS
 
 ---
 
@@ -10,9 +10,29 @@
 ```
 findyoway/
 ├── mobile-native/    # React Native CLI — user-facing mobile app
-├── backend/          # Python Flask — Gemini API server
-├── dashboard/        # React (Vite) — venue registration web dashboard
+│   └── src/
+│       ├── screens/          # 11 screens: Home, Route, Indoor*, Camera, Voice, SOS, Settings
+│       ├── services/
+│       │   ├── navigationEngine/   # A* pathfinding, graph loader, graph validator
+│       │   ├── venueService.ts     # Fetches venues & floor plans from backend
+│       │   ├── navigationApi.ts    # OSRM walking routes + Nominatim geocoding
+│       │   ├── locationService.ts  # GPS permission + tracking
+│       │   └── speechService.ts    # TTS (react-native-tts)
+│       ├── models/           # Node, Edge, Floor, Instruction, RouteResult, NavigationGraph
+│       ├── hooks/            # useOutdoorRoute, useLocationTracking, useVoiceAssistant
+│       └── components/       # AppButton, BottomNav, ErrorState, LoadingState, etc.
+├── backend/          # Python Flask — Gemini AI + EasyOCR + MobileNet-SSD
+│   └── app.py               # 7 endpoints: /api/navigate, /chat, /api/vision, /read-signs,
+│                            #   /api/detect, /api/venues, /api/venues/<id>/floorplan,
+│                            #   /api/venues/validate
+├── dashboard/        # React (Vite) — venue registration + floor plan editor
+│   └── src/
+│       ├── components/      # VenueForm, FloorPlanEditor (React Flow), VenueList
+│       ├── pages/           # Home (venue list), Register (2-step wizard)
+│       └── services/        # supabaseService (insert venues, fetch floor plans, validate)
 ├── .env.example      # Shared env variables template (copy to .env)
+├── MobileNetSSD_deploy.caffemodel  # Pre-trained object detection model
+├── MobileNetSSD_deploy.prototxt
 └── .gitignore
 ```
 
@@ -20,13 +40,11 @@ findyoway/
 
 ## Prerequisites
 
-Before running the project, ensure you have:
-
-1. **Node.js** (>= 22.11.0) - [Download](https://nodejs.org/)
-2. **Python** (>= 3.10) - [Download](https://python.org/)
-3. **Java JDK 17** - Required for Android builds
-4. **Android SDK** - Command line tools (no need for full Android Studio)
-5. **Git** - For cloning the repository
+1. **Node.js** (>= 22.11.0) — [Download](https://nodejs.org/)
+2. **Python** (>= 3.10) — [Download](https://python.org/)
+3. **Java JDK 17** — Required for Android builds
+4. **Android SDK** — `platform-tools`, `build-tools;34.0.0`, `platforms;android-34`
+5. **Git**
 
 ---
 
@@ -35,229 +53,280 @@ Before running the project, ensure you have:
 ### 1. Clone and Setup Environment
 
 ```bash
-# Clone the repository
 git clone https://github.com/sameekshaa19/findyoway-project.git
 cd findyoway-project
-
-# Copy environment variables
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your API keys:
-- `GOOGLE_API_KEY` - Gemini API key
-- `SUPABASE_URL` - Supabase project URL
-- `SUPABASE_ANON_KEY` - Supabase anonymous key
-- `VITE_SUPABASE_URL` - Same as above for dashboard
-- `VITE_SUPABASE_ANON_KEY` - Same as above for dashboard
+Edit `.env` with real values:
 
----
+| Variable | Purpose |
+|----------|---------|
+| `GOOGLE_API_KEY` | Gemini API key (for voice assistant chat) |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `VITE_SUPABASE_URL` | Same as above, for dashboard |
+| `VITE_SUPABASE_ANON_KEY` | Same as above, for dashboard |
 
 ### 2. Flask Backend
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-
-# Activate virtual environment
 venv\Scripts\activate      # Windows
 source venv/bin/activate   # macOS/Linux
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the server
 python app.py
 ```
 
-Backend will run at: `http://localhost:5000`
-
----
+Runs at `http://localhost:5000`
 
 ### 3. Web Dashboard
 
 ```bash
 cd dashboard
-
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
 ```
 
-Dashboard will run at: `http://localhost:3000`
-
----
+Runs at `http://localhost:3000`
 
 ### 4. Mobile App (React Native CLI)
 
-#### Option A: Run on Physical Device via USB (Recommended)
-
 **Step 1: Enable USB Debugging on your Android phone**
-1. Go to **Settings** → **About phone**
-2. Tap **Build number** 7 times to enable Developer options
-3. Go back to **Settings** → **System** → **Developer options**
-4. Turn ON **USB debugging**
-5. Connect your phone to PC via USB cable
-6. On your phone, tap **Allow** when prompted for USB debugging
+1. **Settings** → **About phone** → Tap **Build number** 7 times
+2. **Settings** → **System** → **Developer options** → Turn ON **USB debugging**
+3. Connect phone via USB → tap **Allow**
 
-**Step 2: Setup Android SDK (if not already done)**
+**Step 2: Set up Android SDK**
 
 ```powershell
-# Download and setup Android SDK (run in PowerShell as Admin)
 $AndroidSdk = "$env:USERPROFILE\Android\Sdk"
-New-Item -ItemType Directory -Path $AndroidSdk -Force
-Invoke-WebRequest -Uri "https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip" -OutFile "$env:TEMP\cmdline-tools.zip"
-Expand-Archive -Path "$env:TEMP\cmdline-tools.zip" -DestinationPath "$AndroidSdk" -Force
-Rename-Item -Path "$AndroidSdk\cmdline-tools" -NewName "latest" -Force
-New-Item -ItemType Directory -Path "$AndroidSdk\cmdline-tools" -Force
-Move-Item -Path "$AndroidSdk\latest" -Destination "$AndroidSdk\cmdline-tools\" -Force
-
-# Download OpenJDK 17
-Invoke-WebRequest -Uri "https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_windows-x64_bin.zip" -OutFile "$env:TEMP\openjdk17.zip"
-Expand-Archive -Path "$env:TEMP\openjdk17.zip" -DestinationPath "$env:USERPROFILE\java" -Force
-
-# Set environment variables
-[Environment]::SetEnvironmentVariable("ANDROID_HOME", $AndroidSdk, "User")
-[Environment]::SetEnvironmentVariable("JAVA_HOME", "$env:USERPROFILE\java\jdk-17", "User")
-[Environment]::SetEnvironmentVariable("Path", "$AndroidSdk\cmdline-tools\latest\bin;$AndroidSdk\platform-tools;$env:USERPROFILE\java\jdk-17\bin;$env:Path", "User")
+# Download cmdline-tools, set ANDROID_HOME, add to PATH
+# See docs for platform-specific setup
 ```
 
-**Step 3: Install required SDK components**
-
-```bash
-cd %ANDROID_HOME%\cmdline-tools\latest\bin
-sdkmanager.bat --install "platform-tools" "build-tools;34.0.0" "platforms;android-34"
-```
-
-**Step 4: Build and run the app**
-
-```bash
-cd mobile-native
-
-# Install dependencies
-npm install
-
-# Start Metro bundler (keep this terminal open)
-npm start
-
-# In a NEW terminal, run on Android device
-npm run android
-```
-
-If Metro is already running, you can just run:
-```bash
-npm run android
-```
-
-The app will be installed and launched on your connected phone.
-
-#### Option B: Run on Android Emulator (if you have one set up)
+**Step 3: Build and run**
 
 ```bash
 cd mobile-native
 npm install
+npm start                   # Metro bundler (keep open)
+# In another terminal:
+npm run android             # Install & launch on device
+```
+
+If Metro is already running:
+```bash
 npm run android
 ```
 
 ---
 
-## Project Scripts Summary
+## Features
+
+### Outdoor GPS Navigation
+- OSRM walking routes with turn-by-turn instructions
+- Nominatim geocoding (text → coordinates)
+- Live GPS tracking with step progression
+- Automatic reroute detection (off-route)
+- Voice announcements at each step via TTS
+
+### Indoor Floor-Plan Navigation
+- **A\* pathfinding** with 4 optimization criteria:
+  - `shortest` — minimum distance
+  - `fastest` — minimum walking time
+  - `wheelchair` — avoids stairs, prefers elevators with good accessibility
+  - `emergency` — avoids elevators, prioritizes exits
+- Turn-by-turn instruction generation (turn left/right, floor changes, arrive)
+- Multi-floor support with floor selector tabs
+- Floor-change indicators on route path (elevator/stairs highlighted)
+- Start/destination selection via map tap or entrance landmarks
+
+### Camera + Obstacle Detection
+- Real-time camera preview via `react-native-vision-camera`
+- Periodic snapshot (every 3s) → base64 → Flask `/api/detect`
+- MobileNet-SSD object detection (20 COCO classes)
+- Distance estimation from bounding box size
+- Dangerous object alerts with 5-second voice cooldown
+- Color-coded overlay tags (dangerous objects in red)
+
+### Voice Assistant
+- Speech recognition via `react-native-voice`
+- Gemini AI chat (EN/other languages)
+- TTS response playback
+- Status indicators: listening → processing → response
+
+### Sign Reading
+- EasyOCR text extraction from camera frames
+- Common sign keyword matching (exit, entrance, stairs, elevator, restroom, etc.)
+
+### SOS Emergency
+- GPS coordinates display
+- Emergency voice announcement with current location
+
+### Dashboard (Web)
+- Venue registration form (name, city, address, floors)
+- **React Flow** floor plan editor with drag-to-position and connect handles
+- Node types: entrance, exit, elevator, stairs, room, reception, restroom, pharmacy, junction, landmark
+- Color-coded nodes per type
+- Graph validation (entrance/exit required, no dangling edges, connectivity check)
+- Version numbering + publish/draft toggle
+- Supabase persistence
+
+---
+
+## Architecture
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Mobile    │────▶│   Backend    │────▶│  Supabase   │
+│ (React N.)  │     │   (Flask)    │     │ (PostgreSQL)│
+│             │◀────│              │◀────│             │
+└─────────────┘     └──────────────┘     └─────────────┘
+       │                    │
+       │              ┌─────┴──────┐
+       │              │  External  │
+       │              │  APIs      │
+       │              │ · Gemini   │
+       │              │ · OSRM     │
+       │              │ · Nominatim│
+       │              └────────────┘
+       │
+  ┌────┴─────┐
+  │Dashboard │────▶ Supabase (direct)
+  │ (Vite)   │
+  └──────────┘
+
+Mobile Internal Architecture:
+  Screen (UI) → Hook (logic) → Service (API/Engine)
+                                     │
+                            ┌────────┴────────┐
+                            │ NavigationEngine │
+                            │  ├─ AStar        │
+                            │  ├─ graphLoader  │
+                            │  └─ validateGraph│
+                            └─────────────────┘
+```
+
+---
+
+## Database (Supabase)
+
+### `venues`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | text (PK) | Slug-based ID (e.g. `city-hospital-bengaluru`) |
+| name | text | Venue display name |
+| city | text | City location |
+| address | text | Full street address |
+| floors | int | Number of floors |
+| created_at | timestamptz | Auto-generated |
+
+### `floor_plans`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid (PK) | Auto-generated |
+| venue_id | text (FK → venues) | Parent venue |
+| graph_json | jsonb | Node/edge graph (see format below) |
+| version | int | Version number for publishing |
+| is_published | boolean | Visible to mobile only when true |
+| created_at | timestamptz | Auto-generated |
+
+### Graph JSON Format
+
+```json
+{
+  "nodes": {
+    "node_1": { "label": "Main Entrance", "x": 100, "y": 100, "type": "entrance", "floor": 0 },
+    "node_2": { "label": "Pharmacy", "x": 250, "y": 150, "type": "room", "floor": 0 },
+    "node_3": { "label": "Elevator A", "x": 300, "y": 300, "type": "elevator", "floor": 0 }
+  },
+  "edges": [
+    { "from": "node_1", "to": "node_2", "weight": 15 },
+    { "from": "node_2", "to": "node_3", "weight": 10 }
+  ]
+}
+```
+
+---
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| POST | `/api/navigate` | Gemini AI chat (voice assistant) |
+| POST | `/chat` | Alias for `/api/navigate` |
+| POST | `/api/vision` | EasyOCR sign reading (base64 image) |
+| POST | `/read-signs` | EasyOCR sign reading (multipart file) |
+| POST | `/api/detect` | MobileNet-SSD object detection |
+| GET | `/api/venues` | List all venues |
+| GET | `/api/venues/:id/floorplan` | Latest published floor plan |
+| POST | `/api/venues/validate` | Validate graph structure |
+
+---
+
+## Project Scripts
 
 | Component | Command | URL |
 |-----------|---------|-----|
 | Backend | `python app.py` | http://localhost:5000 |
 | Dashboard | `npm run dev` | http://localhost:3000 |
-| Mobile - Metro | `npm start` | N/A (bundler) |
-| Mobile - Android | `npm run android` | On device |
+| Mobile — Metro | `npm start` | — |
+| Mobile — Android | `npm run android` | On device |
+| Mobile — iOS | `npm run ios` | Simulator |
 
 ---
 
 ## Troubleshooting
 
-### Mobile App Issues
+### Mobile
+- **adb not found** — Add `platform-tools` to PATH
+- **Device not detected** — Check USB debugging, try another cable, run `adb devices`
+- **Build fails (Java)** — Verify `JAVA_HOME` points to JDK 17
+- **Metro won't start** — `npx react-native start --reset-cache`
 
-**Issue: `adb` command not found**
-- Ensure Android SDK platform-tools is in PATH
-- Restart terminal after setting environment variables
+### Backend
+- **Module not found** — Activate venv and reinstall: `pip install -r requirements.txt`
+- **Port 5000 in use** — Kill the process or set `PORT=5001` in `.env`
 
-**Issue: Device not detected**
-- Check USB debugging is enabled on phone
-- Try different USB cable or port
-- Run: `adb devices` to verify connection
-
-**Issue: Build fails with Java errors**
-- Verify JAVA_HOME is set to JDK 17
-- Restart terminal after setting JAVA_HOME
-
-**Issue: Metro bundler won't start**
-- Clear cache: `npm start -- --reset-cache`
-- Delete `node_modules` and run `npm install` again
-
-### Backend Issues
-
-**Issue: Module not found errors**
-- Ensure virtual environment is activated
-- Re-install dependencies: `pip install -r requirements.txt`
-
-**Issue: Port 5000 already in use**
-- Kill existing process or change PORT in `.env`
-
-### Dashboard Issues
-
-**Issue: Dependencies not found**
-- Run `npm install` again
-- Check for Node.js version compatibility
+### Physical Device Testing
+The mobile app defaults to `10.0.2.2:5000` (Android emulator). For a real device:
+1. Edit `mobile-native/src/config.ts` to use your PC's LAN IP (e.g., `http://192.168.1.10:5000`)
+2. Or use ngrok: `ngrok http 5000`
 
 ---
 
 ## Tech Stack
 
-| Layer | Tech |
-|---|---|
-| Mobile | React Native CLI, React 19, TypeScript |
-| Navigation | React Navigation, React Native Maps |
-| Camera | react-native-camera (to be integrated) |
-| Location | React Native Geolocation Service |
-| AI | Gemini API (text + vision) |
-| Obstacle Detection | MobileNet SSD (OpenCV) |
-| Backend | Python + Flask |
-| Database | Supabase (PostgreSQL) |
-| Dashboard | React 18 + Vite + React Flow |
+| Layer | Technology |
+|-------|-----------|
+| Mobile Framework | React Native CLI 0.85, React 19, TypeScript |
+| Navigation | React Navigation Native Stack v7 |
+| Maps | react-native-maps (MapView + Polyline + Marker) |
+| Camera | react-native-vision-camera v5 |
+| Location | react-native-geolocation-service |
+| Voice / Speech | react-native-voice + react-native-tts |
+| AI Chat | Google Gemini 1.5 Flash (text) |
+| OCR | EasyOCR (CPU) |
+| Object Detection | OpenCV + MobileNet-SSD (Caffe) |
+| Backend | Python 3 + Flask 3 |
+| Database | Supabase (PostgreSQL) via REST API |
+| Dashboard | React 18 + Vite 5 + @xyflow/react 12 |
+| Dashboard State | Zustand 4 |
 
 ---
 
 ## Git Workflow
 
-The project uses `development` branch as the main working branch:
-
 ```bash
-# Switch to development branch
 git checkout development
-
-# Pull latest changes
 git pull origin development
-
-# Create feature branch
 git checkout -b feature/your-feature-name
-
-# After making changes
+# ... make changes ...
 git add .
-git commit -m "Your commit message"
+git commit -m "feat: description of change"
 git push origin feature/your-feature-name
-
-# Create Pull Request on GitHub to merge into development
+# Create Pull Request on GitHub → merge into development
 ```
-
----
-
-## Team
-
-| Person | Area |
-|---|---|
-| Person 1 | Navigation + Maps (GPS, Dijkstra, floor plans) |
-| Person 2 | Camera + Vision (Obstacle Detection, Gemini Vision) |
-| Person 3 | Voice Bot + Backend (Flask, Gemini text, SOS) |
-| Person 4 | Web Dashboard (venue registration, floor plan editor) |

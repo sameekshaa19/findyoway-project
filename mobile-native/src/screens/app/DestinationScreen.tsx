@@ -15,8 +15,8 @@ export function DestinationScreen({ navigation }: Props) {
   return (
     <ScreenLayout navigation={navigation} currentRoute="Destination">
       <AppHeader
-        title="Destination Input"
-        subtitle="This screen defines the mobile-to-backend contract for destination text and launches the route engine."
+        title="Where to?"
+        subtitle="Enter a destination to get walking directions"
       />
 
       <View style={styles.card}>
@@ -27,6 +27,8 @@ export function DestinationScreen({ navigation }: Props) {
           placeholder="Library, main gate, hospital..."
           placeholderTextColor={colors.textMuted}
           style={styles.input}
+          accessibilityLabel="Enter your destination"
+          autoFocus
         />
         <AppButton
           label="Build Outdoor Route"

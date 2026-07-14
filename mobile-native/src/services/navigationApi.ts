@@ -57,14 +57,20 @@ export async function geocodeDestination(query: string): Promise<{
   coordinate: RouteCoordinate;
 }> {
   const encodedQuery = encodeURIComponent(query.trim());
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=jsonv2&limit=1`,
-    {
-      headers: {
-        Accept: 'application/json',
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=jsonv2&limit=1`,
+      {
+        headers: {
+          Accept: 'application/json',
+        },
       },
-    },
-  );
+    );
+  } catch {
+    throw new Error('No internet connection. Check your network and try again.');
+  }
 
   if (!response.ok) {
     throw new Error('Destination lookup failed.');

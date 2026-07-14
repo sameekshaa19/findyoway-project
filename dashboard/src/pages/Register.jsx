@@ -17,11 +17,11 @@ export default function Register({ onSuccess }) {
     setStep(2)
   }
 
-  const handleFloorPlanSubmit = async (graphJson) => {
+  const handleFloorPlanSubmit = async (graphJson, options = {}) => {
     setSaving(true)
     setError('')
     try {
-      await registerVenue(venueData, graphJson)
+      await registerVenue(venueData, graphJson, options)
       setSuccess(true)
       setTimeout(onSuccess, 2000)
     } catch (e) {

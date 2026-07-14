@@ -45,7 +45,7 @@ export function RouteScreen({ navigation, route: routeProp }: Props) {
     <ScreenLayout navigation={navigation} currentRoute="Destination" scrollable={false}>
       <AppHeader
         title="Outdoor Route"
-        subtitle="Live GPS tracking, OSRM routing, step progression, and reroute detection live here."
+        subtitle="Follow the spoken instructions as you walk"
       />
 
       {!permissionGranted && !locationLoading ? (

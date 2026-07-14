@@ -6,8 +6,11 @@ import { DestinationScreen } from '../screens/app/DestinationScreen';
 import { RouteScreen } from '../screens/app/RouteScreen';
 import { SOSScreen } from '../screens/app/SOSScreen';
 import { SettingsScreen } from '../screens/app/SettingsScreen';
-import { CameraPlaceholderScreen } from '../screens/app/CameraPlaceholderScreen';
+import { CameraScreen } from '../screens/app/CameraScreen';
 import { VoiceAssistantScreen } from '../screens/app/VoiceAssistantScreen';
+import { IndoorSelectVenueScreen } from '../screens/app/IndoorSelectVenueScreen';
+import { IndoorMapScreen } from '../screens/app/IndoorMapScreen';
+import { IndoorRouteViewScreen } from '../screens/app/IndoorRouteViewScreen';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../constants/theme';
 
@@ -42,11 +45,14 @@ export function AppNavigator() {
         <Stack.Screen name="Route" component={RouteScreen} />
         <Stack.Screen name="SOS" component={SOSScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="CameraPlaceholder" component={CameraPlaceholderScreen} />
+        <Stack.Screen name="CameraPlaceholder" component={CameraScreen} />
         <Stack.Screen
           name="VoiceAssistant"
           component={VoiceAssistantScreen}
         />
+        <Stack.Screen name="IndoorSelectVenue" component={IndoorSelectVenueScreen} />
+        <Stack.Screen name="IndoorMap" component={IndoorMapScreen} />
+        <Stack.Screen name="IndoorRouteView" component={IndoorRouteViewScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

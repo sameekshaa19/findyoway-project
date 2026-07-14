@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import Voice from 'react-native-voice';
+import { FLASK_API_URL } from '../config';
 
 export type VoiceState = 'idle' | 'listening' | 'processing';
 
@@ -13,8 +14,6 @@ interface UseVoiceAssistantReturn {
   stopListening: () => Promise<void>;
   isListening: boolean;
 }
-
-const BACKEND_URL = 'http://10.0.2.2:5000'; // Android emulator localhost
 
 export function useVoiceAssistant(): UseVoiceAssistantReturn {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
@@ -60,7 +59,7 @@ export function useVoiceAssistant(): UseVoiceAssistantReturn {
     try {
       setVoiceState('processing');
       
-      const response = await fetch(`${BACKEND_URL}/api/navigate`, {
+      const response = await fetch(`${FLASK_API_URL}/api/navigate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

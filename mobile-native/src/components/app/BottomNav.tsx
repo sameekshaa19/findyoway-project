@@ -4,14 +4,12 @@ import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../types/navigation';
 import { colors, radii, spacing } from '../../constants/theme';
 
-type BottomTabRoute = 'Home' | 'Destination' | 'SOS' | 'Settings';
-
 type BottomNavProps = {
   navigation: NavigationProp<RootStackParamList>;
-  currentRoute: BottomTabRoute;
+  currentRoute: keyof RootStackParamList;
 };
 
-const tabs: Array<{ label: string; route: BottomTabRoute }> = [
+const tabs: Array<{ label: string; route: keyof RootStackParamList }> = [
   { label: 'Home', route: 'Home' },
   { label: 'Destination', route: 'Destination' },
   { label: 'SOS', route: 'SOS' },

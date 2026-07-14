@@ -133,41 +133,17 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 # ---------------------------------------------------------------------------
-# /api/stt  — speech-to-text endpoint for VoiceBot component
-# ---------------------------------------------------------------------------
-@app.route('/api/stt', methods=['POST'])
-def api_stt():
-    """Speech-to-text endpoint - accepts audio file upload."""
-    try:
-        if 'audio' not in request.files:
-            return jsonify({"error": "audio file is required"}), 400
-        
-        audio_file = request.files['audio']
-        language = request.form.get('language', 'English')
-        
-        # For demo purposes, return a placeholder transcript
-        # In production, integrate with Google Cloud STT, Azure, or Whisper
-        placeholder_transcripts = {
-            'English': 'pharmacy',
-            'Hindi': 'फार्मेसी',
-            'Spanish': 'farmacia',
-            'French': 'pharmacie'
-        }
-        
-        transcript = placeholder_transcripts.get(language, 'pharmacy')
-        
-        return jsonify({"transcript": transcript}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ---------------------------------------------------------------------------
 # /api/vision  — camera frame sign reading using EasyOCR
 # /read-signs  — alias kept for backward-compat
 # ---------------------------------------------------------------------------
-import easyocr
+_ocr_reader = None
 
-# Initialize EasyOCR reader (English only)
-ocr_reader = easyocr.Reader(['en'], gpu=False)
+def _get_ocr_reader():
+    global _ocr_reader
+    if _ocr_reader is None:
+        import easyocr
+        _ocr_reader = easyocr.Reader(['en'], gpu=False)
+    return _ocr_reader
 
 def _vision_logic(image_bytes, goal="destination", language="English"):
     """Extract text from image using EasyOCR."""
@@ -180,7 +156,7 @@ def _vision_logic(image_bytes, goal="destination", language="English"):
             return "Could not process image"
         
         # Run OCR
-        results = ocr_reader.readtext(img)
+        results = _get_ocr_reader().readtext(img)
         
         if not results:
             return "No signs detected, keep walking slowly."
@@ -315,6 +291,112 @@ def api_detect():
             "count": len(objects)
         }), 200
         
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ---------------------------------------------------------------------------
+# /api/venues  — Floor plan data for mobile app
+# ---------------------------------------------------------------------------
+import urllib.request
+import json as json_lib
+
+_SUPABASE_URL = os.getenv('SUPABASE_URL') or os.getenv('VITE_SUPABASE_URL', '')
+_SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY') or os.getenv('VITE_SUPABASE_ANON_KEY', '')
+
+@app.route('/api/venues', methods=['GET'])
+def api_list_venues():
+    """List all venues with published floor plans."""
+    if not _SUPABASE_URL or not _SUPABASE_ANON_KEY:
+        return jsonify({"error": "Supabase not configured"}), 503
+    try:
+        rest_url = f"{_SUPABASE_URL}/rest/v1/venues?order=created_at.desc"
+        req = urllib.request.Request(rest_url, headers={
+            "apikey": _SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {_SUPABASE_ANON_KEY}",
+        })
+        with urllib.request.urlopen(req) as resp:
+            data = json_lib.loads(resp.read().decode())
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/venues/<venue_id>/floorplan', methods=['GET'])
+def api_get_floorplan(venue_id):
+    """Get the latest published floor plan for a venue."""
+    if not _SUPABASE_URL or not _SUPABASE_ANON_KEY:
+        return jsonify({"error": "Supabase not configured"}), 503
+    try:
+        rest_url = (
+            f"{_SUPABASE_URL}/rest/v1/floor_plans"
+            f"?venue_id=eq.{venue_id}&is_published=eq.true"
+            f"&order=version.desc&limit=1"
+        )
+        req = urllib.request.Request(rest_url, headers={
+            "apikey": _SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {_SUPABASE_ANON_KEY}",
+        })
+        with urllib.request.urlopen(req) as resp:
+            rows = json_lib.loads(resp.read().decode())
+        if not rows:
+            return jsonify({"error": "No published floor plan found"}), 404
+        return jsonify(rows[0]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/venues/validate', methods=['POST'])
+def api_validate_floorplan():
+    """Validate a floor plan graph structure."""
+    try:
+        data = request.json or {}
+        graph_json = data.get('graph_json', {})
+        nodes = graph_json.get('nodes', {})
+        edges = graph_json.get('edges', [])
+
+        issues = []
+
+        if not nodes:
+            issues.append("Graph has no nodes")
+        if not edges:
+            issues.append("Graph has no edges")
+
+        node_ids = set(nodes.keys())
+        for edge in edges:
+            if edge.get('from') not in node_ids:
+                issues.append(f"Edge references unknown node: {edge.get('from')}")
+            if edge.get('to') not in node_ids:
+                issues.append(f"Edge references unknown node: {edge.get('to')}")
+
+        has_entrance = any(
+            n.get('type') == 'entrance' for n in nodes.values()
+        )
+        if not has_entrance:
+            issues.append("No entrance node found")
+
+        has_exit = any(
+            n.get('type') == 'exit' for n in nodes.values()
+        )
+        if not has_exit:
+            issues.append("No exit node found")
+
+        if not issues:
+            visited = set()
+            queue = [next(iter(node_ids))] if node_ids else []
+            while queue:
+                current = queue.pop(0)
+                if current in visited:
+                    continue
+                visited.add(current)
+                for edge in edges:
+                    if edge.get('from') == current and edge.get('to') not in visited:
+                        queue.append(edge.get('to'))
+
+            if len(visited) != len(node_ids):
+                issues.append(f"Graph is disconnected: {len(node_ids) - len(visited)} node(s) unreachable")
+
+        return jsonify({
+            "valid": len(issues) == 0,
+            "issues": issues,
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

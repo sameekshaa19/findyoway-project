@@ -8,6 +8,17 @@ export type RootStackParamList = {
   Settings: undefined;
   CameraPlaceholder: undefined;
   VoiceAssistant: undefined;
+  IndoorSelectVenue: undefined;
+  IndoorMap: {
+    venueId: string;
+    venueName: string;
+  };
+  IndoorRouteView: {
+    venueId: string;
+    venueName: string;
+    startNodeId: string;
+    goalNodeId: string;
+  };
 };
 
 export type RouteCoordinate = {
